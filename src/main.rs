@@ -349,7 +349,7 @@ fn build_openers_for(path: &Path) -> Vec<String> {
     // optional: user-provided ad-hoc openers (semicolon separated)
     if let Ok(list) = env::var("FILE_PICKER_OPENERS") {
         // support splitting by ';' or newline
-        for spec in list.split(|c| c == ';' || c == '\n') {
+        for spec in list.split([';', '\n']) {
             let spec = spec.trim();
             if !spec.is_empty() {
                 out.push(spec.to_string());
@@ -399,6 +399,6 @@ fn clamp_selected(app: &mut App) {
     match (len, app.selected) {
         (0, _) => app.selected = None,
         (n, Some(i)) if i >= n => app.selected = Some(n - 1),
-        (.., _) => {} // already valid
+        (..) => {} // already valid
     }
 }

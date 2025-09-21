@@ -88,11 +88,11 @@ pub fn open_path(path: &std::path::Path) -> Result<(), String> {
                 .map(|_| ())
                 .map_err(|e| e.to_string());
         }
-        return Command::new("open")
+        Command::new("open")
             .arg(path)
             .spawn()
             .map(|_| ())
-            .map_err(|e| e.to_string());
+            .map_err(|e| e.to_string())
     }
 
     // 3) Other OS: xdg-open fallback
