@@ -14,12 +14,12 @@ pub struct FileNode {
 
 #[derive(Debug, Clone)]
 pub struct FlatItem {
-    pub idx_path: Vec<usize>,   // path of indices from root to this node
+    pub idx_path: Vec<usize>, // path of indices from root to this node
     pub name: String,
     pub path: PathBuf,
     pub is_dir: bool,
     pub is_expanded: bool,
-    pub indent: u16,            // how deep to indent when rendering
+    pub indent: u16, // how deep to indent when rendering
 }
 
 impl FileNode {
@@ -60,7 +60,6 @@ impl FileNode {
         nodes
     }
 }
-
 
 pub fn flatten(nodes: &[FileNode]) -> Vec<FlatItem> {
     fn walk(out: &mut Vec<FlatItem>, nodes: &[FileNode], prefix: &[usize], indent: u16) {

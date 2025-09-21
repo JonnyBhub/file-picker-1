@@ -1,6 +1,6 @@
 // This file contains definitions for icons used to represent folders and files in the user interface.
 
-pub const FILE_ICON: &str = "📄";   // Icon for files
+pub const FILE_ICON: &str = "📄"; // Icon for files
 pub const OPEN_FOLDER_ICON: &str = "📂"; // Icon for open folders
 pub const CLOSED_FOLDER_ICON: &str = "📁"; // Icon for closed folders
 

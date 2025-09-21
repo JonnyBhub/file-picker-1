@@ -1,6 +1,6 @@
 use std::env;
-use std::process::{Command, Stdio};
 use std::path::Path;
+use std::process::{Command, Stdio};
 
 fn command_exists(cmd: &str) -> bool {
     // If a path was provided, check the file directly
@@ -32,7 +32,6 @@ fn command_exists(cmd: &str) -> bool {
     }
 }
 
-
 pub fn open_with_spec(spec: &str, path: &Path) -> Result<(), String> {
     let mut parts = parse_cmdline(spec);
     if parts.is_empty() {
@@ -50,10 +49,8 @@ pub fn open_with_spec(spec: &str, path: &Path) -> Result<(), String> {
     command.spawn().map(|_| ()).map_err(|e| e.to_string())
 }
 
-
-pub fn open_path(path: &std::path::Path) -> Result<(),String> {
-
-    if let Some(ext) = path.extension().and_then(|s| s.to_str()){
+pub fn open_path(path: &std::path::Path) -> Result<(), String> {
+    if let Some(ext) = path.extension().and_then(|s| s.to_str()) {
         let key = format!("FILE_PICKER_EXT_{}", ext.to_ascii_lowercase());
         if let Ok(spec) = env::var(&key) {
             let mut parts = parse_cmdline(&spec);
@@ -73,8 +70,8 @@ pub fn open_path(path: &std::path::Path) -> Result<(),String> {
         }
     }
 
-   #[cfg(target_os = "macos")]
-   {
+    #[cfg(target_os = "macos")]
+    {
         if let Ok(app) = env::var("FILE_PICKER_APP") {
             return Command::new("open")
                 .args(["-a", &app])
@@ -107,8 +104,6 @@ pub fn open_path(path: &std::path::Path) -> Result<(),String> {
             .map(|_| ())
             .map_err(|e| e.to_string());
     }
-    
-
 }
 
 fn parse_cmdline(s: &str) -> Vec<String> {

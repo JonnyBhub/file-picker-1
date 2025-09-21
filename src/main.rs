@@ -1,26 +1,22 @@
-use std::io::stdout;
 use std::env;
+use std::io::stdout;
 use std::path::Path;
 use std::time::{Duration, Instant};
 
 use crossterm::{
-    event::{self, 
-        DisableMouseCapture, 
-        EnableMouseCapture, 
-        Event, 
-        KeyCode, 
-        KeyEventKind, 
-        MouseEvent, 
-        MouseEventKind, 
-        MouseButton},
+    event::{
+        self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind, MouseButton,
+        MouseEvent, MouseEventKind,
+    },
     execute,
 };
 
-mod fs;           // src/fs/mod.rs exposes pub mod icons;
-mod ui;
-mod events;          // new: renderer module
+mod events;
+mod fs; // src/fs/mod.rs exposes pub mod icons;
+mod ui; // new: renderer module
 
-pub struct Entry {           // made public so ui.rs can use it
+pub struct Entry {
+    // made public so ui.rs can use it
     pub name: String,
     pub is_dir: bool,
 }
@@ -30,15 +26,14 @@ pub struct OpenMenu {
     pub selected: usize,
 }
 
-pub struct App {             // made public so ui.rs can use it
+pub struct App {
+    // made public so ui.rs can use it
     pub status: String,
     pub entries: Vec<fs::tree::FileNode>,
     pub selected: Option<usize>,
     pub last_click: Option<(usize, Instant)>, // for double-click detection
-    pub open_menu: Option<OpenMenu>
+    pub open_menu: Option<OpenMenu>,
 }
-
-
 
 fn main() {
     let mut terminal = ratatui::init();
@@ -65,52 +60,63 @@ fn main() {
             .expect("failed to draw frame");
 
         if let Some(menu) = app.open_menu.as_mut() {
-        match event::read().expect("failed to read event"){
-            // accept Press or Repeat so we don't skip alternating keys
-            Event::Key(k) if k.kind == KeyEventKind::Press || k.kind == KeyEventKind::Repeat => match k.code {
-                KeyCode::Esc => {
-                    app.open_menu = None;
-                    app.status = "Open with canceled".to_string();
-                }
-                KeyCode::Up => {
-                    if menu.items.is_empty() { /* nothing */ }
-                    else if menu.selected == 0 { menu.selected = menu.items.len() - 1; }
-                    else { menu.selected -= 1; }
-                }
-                KeyCode::Down => {
-                    if menu.items.is_empty() { /* nothing */ }
-                    else { menu.selected = (menu.selected + 1) % menu.items.len(); }
-                }
-                KeyCode::Enter => {
-                    // act on the selected opener (existing logic)
-                    if let Some(sel_idx) = app.selected {
-                        let flat = fs::tree::flatten(&app.entries);
-                        if let Some(it) = flat.get(sel_idx) {
-                            let res = if menu.selected == 0 {
-                                events::open_path(&it.path)
+            match event::read().expect("failed to read event") {
+                // accept Press or Repeat so we don't skip alternating keys
+                Event::Key(k)
+                    if k.kind == KeyEventKind::Press || k.kind == KeyEventKind::Repeat =>
+                {
+                    match k.code {
+                        KeyCode::Esc => {
+                            app.open_menu = None;
+                            app.status = "Open with canceled".to_string();
+                        }
+                        KeyCode::Up => {
+                            if menu.items.is_empty() { /* nothing */
+                            } else if menu.selected == 0 {
+                                menu.selected = menu.items.len() - 1;
                             } else {
-                                let spec = &menu.items[menu.selected];
-                                events::open_with_spec(spec, &it.path)
-                            };
-                            match res {
-                                Ok(_) => app.status = format!("Launched opener for {}", it.name),
-                                Err(e) => app.status = format!("Open failed: {}", e),
+                                menu.selected -= 1;
                             }
                         }
+                        KeyCode::Down => {
+                            if menu.items.is_empty() { /* nothing */
+                            } else {
+                                menu.selected = (menu.selected + 1) % menu.items.len();
+                            }
+                        }
+                        KeyCode::Enter => {
+                            // act on the selected opener (existing logic)
+                            if let Some(sel_idx) = app.selected {
+                                let flat = fs::tree::flatten(&app.entries);
+                                if let Some(it) = flat.get(sel_idx) {
+                                    let res = if menu.selected == 0 {
+                                        events::open_path(&it.path)
+                                    } else {
+                                        let spec = &menu.items[menu.selected];
+                                        events::open_with_spec(spec, &it.path)
+                                    };
+                                    match res {
+                                        Ok(_) => {
+                                            app.status = format!("Launched opener for {}", it.name)
+                                        }
+                                        Err(e) => app.status = format!("Open failed: {}", e),
+                                    }
+                                }
+                            }
+                            app.open_menu = None;
+                        }
+                        _ => {}
                     }
-                    app.open_menu = None;
                 }
+                // ignore other events while menu is active
                 _ => {}
-            },
-            // ignore other events while menu is active
-            _ => {}
+            }
+            continue;
         }
-        continue;
-    }
 
-    match event::read().expect("failed to read event") {
-        Event::Key(k) if k.kind == KeyEventKind::Press => match k.code {
-            KeyCode::Char('q') | KeyCode::Esc => break,
+        match event::read().expect("failed to read event") {
+            Event::Key(k) if k.kind == KeyEventKind::Press => match k.code {
+                KeyCode::Char('q') | KeyCode::Esc => break,
                 KeyCode::Char('o') => {
                     if let Some(i) = app.selected {
                         let flat = fs::tree::flatten(&app.entries);
@@ -125,7 +131,9 @@ fn main() {
                 }
                 KeyCode::Down => {
                     let flat_len = fs::tree::flatten(&app.entries).len();
-                    if flat_len == 0 { continue; }
+                    if flat_len == 0 {
+                        continue;
+                    }
                     if let Some(i) = app.selected {
                         if i + 1 < flat_len {
                             app.selected = Some(i + 1);
@@ -136,7 +144,9 @@ fn main() {
                 }
                 KeyCode::Up => {
                     let flat_len = fs::tree::flatten(&app.entries).len();
-                    if flat_len == 0 { continue; }
+                    if flat_len == 0 {
+                        continue;
+                    }
                     if let Some(i) = app.selected {
                         if i > 0 {
                             app.selected = Some(i - 1);
@@ -195,7 +205,10 @@ fn main() {
                             } else {
                                 match events::open_path(&it.path) {
                                     Ok(_) => app.status = format!("Opening {}", it.path.display()),
-                                    Err(e) => app.status = format!("Failed to open {}: {}", it.path.display(), e),
+                                    Err(e) => {
+                                        app.status =
+                                            format!("Failed to open {}: {}", it.path.display(), e)
+                                    }
                                 }
                             }
                         }
@@ -226,24 +239,39 @@ fn main() {
                                     let now = Instant::now();
                                     let dbl_thresh = Duration::from_millis(350);
                                     if let Some((last_idx, t)) = app.last_click {
-                                        if last_idx == clicked_idx && now.duration_since(t) <= dbl_thresh {
+                                        if last_idx == clicked_idx
+                                            && now.duration_since(t) <= dbl_thresh
+                                        {
                                             // Double-click: act on the item
                                             let it = &flat[clicked_idx];
                                             if it.is_dir {
                                                 let idx = it.idx_path.clone();
-                                                if let Some(node) = with_node_mut(&mut app.entries, &idx) {
+                                                if let Some(node) =
+                                                    with_node_mut(&mut app.entries, &idx)
+                                                {
                                                     if node.is_expanded {
                                                         node.collapse();
-                                                        app.status = format!("Collapsed {}", node.name);
+                                                        app.status =
+                                                            format!("Collapsed {}", node.name);
                                                     } else {
                                                         node.expand();
-                                                        app.status = format!("Expanded {}", node.name);
+                                                        app.status =
+                                                            format!("Expanded {}", node.name);
                                                     }
                                                 }
                                             } else {
                                                 match events::open_path(&it.path) {
-                                                    Ok(_) => app.status = format!("Opening {}", it.path.display()),
-                                                    Err(e) => app.status = format!("Failed to open {}: {}", it.path.display(), e),
+                                                    Ok(_) => {
+                                                        app.status =
+                                                            format!("Opening {}", it.path.display())
+                                                    }
+                                                    Err(e) => {
+                                                        app.status = format!(
+                                                            "Failed to open {}: {}",
+                                                            it.path.display(),
+                                                            e
+                                                        )
+                                                    }
                                                 }
                                             }
                                             clamp_selected(&mut app);
@@ -259,7 +287,9 @@ fn main() {
                     }
                     MouseEventKind::ScrollUp => {
                         let flat_len = fs::tree::flatten(&app.entries).len();
-                        if flat_len == 0 { continue; }
+                        if flat_len == 0 {
+                            continue;
+                        }
                         if let Some(i) = app.selected {
                             if i > 0 {
                                 app.selected = Some(i - 1);
@@ -274,7 +304,9 @@ fn main() {
                     }
                     MouseEventKind::ScrollDown => {
                         let flat_len = fs::tree::flatten(&app.entries).len();
-                        if flat_len == 0 { continue; }
+                        if flat_len == 0 {
+                            continue;
+                        }
                         if let Some(i) = app.selected {
                             if i + 1 < flat_len {
                                 app.selected = Some(i + 1);
@@ -291,7 +323,6 @@ fn main() {
                         app.status = describe_mouse(m);
                     }
                 }
-               
             }
             Event::Resize(_, _) => { /* redraw next loop */ }
             _ => {}
@@ -302,7 +333,6 @@ fn main() {
     execute!(stdout(), DisableMouseCapture).expect("failed to disable mouse capture");
     ratatui::restore();
 }
-
 
 fn build_openers_for(path: &Path) -> Vec<String> {
     let mut out = Vec::new();
